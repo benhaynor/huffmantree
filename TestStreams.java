@@ -1,9 +1,11 @@
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.File;
+
 public class TestStreams{
 
-	public static void main(String[] args){
+	public static void simpleIOTest(){
 		try{
 			BitOutputStream bo = new BitOutputStream(new FileOutputStream("test.txt"));
 			bo.writeInt(20);
@@ -13,12 +15,21 @@ public class TestStreams{
 			bo.writeBit(1);
 			bo.close();
 			BitInputStream bi = new BitInputStream(new FileInputStream("test.txt"));
-			System.out.println(bi.readInt());
-			System.out.println(bi.readBit());
-			System.out.println(bi.readBit());
-			System.out.println(bi.readBit());
-			System.out.println(bi.readBit());
+			assert(bi.readInt() == 20);
+			assert(bi.readBit() == 0);
+			assert(bi.readBit() == 1);
+			assert(bi.readBit() == 0);
+			assert(bi.readBit() == 1);
+			System.out.println("Successfully wrote and read a bit stream.");
 			bi.close();
-		} catch (IOException e){}
+			File bif = new File("test.txt");
+			bif.delete();
+		} catch (IOException e){
+			System.exit(1);
+		}
+	}
+
+	public static void main(String[] args){
+		simpleIOTest();
 	}
 }
