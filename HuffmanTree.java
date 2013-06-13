@@ -1,3 +1,5 @@
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -48,7 +50,6 @@ public class HuffmanTree{
 		if (node.code != '\\'){
 			encodings.put(node.code, path);	
 			reverseEncodings.put(path, node.code);	
-			System.out.printf("Code:%s, Path:%s%n", node.code, path);
 		}
 		if (node.lc != null){
 			encode(node.lc, path + "0");
@@ -64,16 +65,30 @@ public class HuffmanTree{
 
 	//A helper method to translate files
 	public void encode(String inFile, String outFile){
-
-		PrintWriter out = null; 
+		System.out.println("Encoding...");
+		BitOutputStream out = null;
 		BufferedReader in = null; 
+		BufferedReader inc = null;
+		int charCount = 0;
 		try{
-			out = new PrintWriter( new FileWriter(outFile));
+			inc = new BufferedReader( new FileReader(inFile));
+			while(inc.read() != -1){
+				charCount ++;
+			}	
+		} catch (IOException e){
+			System.exit(1);
+		} finally{
+			try{
+				if (inc != null) inc.close();
+			} catch(IOException e){}
+		}
+		try{
+			out = new BitOutputStream(new FileOutputStream(outFile));
 			in = new BufferedReader( new FileReader(inFile));
+			out.writeInt(charCount);
 			for (int next = in.read(); next != -1; next = in.read()){	
 				char nc = (char) next;
-				System.out.println(next);
-				out.write(encodings.get(nc));
+				out.writeBits(stringToIntArray(encodings.get(nc)));
 			}
 		} catch (IOException e){
 			System.exit(1);
@@ -85,19 +100,28 @@ public class HuffmanTree{
 		}
 	}
 
+	public static int[] stringToIntArray(String s){
+		int[] trans = new int[s.length()];
+		for (int i = 0; i < trans.length; i ++){
+			trans[i] = Integer.parseInt(Character.toString(s.charAt(i)));
+		}
+		return trans;
+	}
+
 	//A helper method to unstranslate files
 	public void decode(String inFile, String outFile){
 		System.out.println("decoding");
 		try{
-			BufferedReader in = new BufferedReader( new FileReader(inFile));
+			BitInputStream in = new BitInputStream(new FileInputStream(inFile));
 			PrintWriter out = new PrintWriter( new FileWriter(outFile));
 			String s = "";
-			for(int nc = in.read(); nc != 10 && nc != -1 ; nc = in.read()){
-				//System.out.println(Character.toString((char) nc));
-				s = s + Character.toString((char) nc);
+			int nchars = in.readInt();
+			for(int nc = in.readBit(); nchars > 0 && nc != -1 ; nc = in.readBit()){
+				s = s + Integer.toString(nc);
 				if (reverseEncodings.containsKey(s)){
 					out.write(reverseEncodings.get(s));
 					s = "";
+					nchars --;
 				}
 			}
 			in.close();
@@ -109,10 +133,13 @@ public class HuffmanTree{
 		HuffmanTree ht = new HuffmanTree(new char[] {'a', 'e', 'i', 's', 't', 'p', '\n'},
 			new int[] {10, 15, 12, 3, 4, 13, 1});
 		ht.createTree();
-		ht.print();
 		ht.createEncodingMap();
-		//ht.encode("tochange.txt","tochange.dat");
-		ht.decode("tochange.dat","reconstructed.txt");
+		if (args[0].equals("encode")){
+			ht.encode("tochange.txt","tochange.dat");
+		} else if (args[0].equals("decode")){
+			ht.decode("tochange.dat","reconstructed.txt");
+		}
+
 	}
 
 }
